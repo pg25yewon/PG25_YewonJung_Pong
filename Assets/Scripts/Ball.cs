@@ -5,16 +5,19 @@ using UnityEngine.UI;
 
 public class Ball : MonoBehaviour
 {
-    [SerializeField] private float InitialSpeed = 10f; 
-    [SerializeField] private float SpeedIncrease = 0.25f;  
-    [SerializeField] private Text AIScore;  
-    [SerializeField] private Text PlayerScore;  
+    [SerializeField] private float InitialSpeed = 10f;
+    [SerializeField] private float SpeedIncrease = 0.25f;
+    [SerializeField] private Text AIScore;
+    [SerializeField] private Text PlayerScore;
+    [SerializeField] private int WinningScore = 6;
+    [SerializeField] private Canvas GameOver;
 
-    private int _hitCounter;  
-    private Rigidbody2D _rb;  
+    private int _hitCounter;
+    private Rigidbody2D _rb;
 
     void Start()
     {
+        GameOver.enabled = false;
         _rb = GetComponent<Rigidbody2D>();  // Get the Rigidbody component on startup
         Invoke("StartBall", 2f);  // Delay the initial ball movement for 2 seconds
     }
@@ -37,7 +40,16 @@ public class Ball : MonoBehaviour
         _rb.velocity = new Vector2(0, 0);
         transform.position = new Vector2(0, 0);
         _hitCounter = 0;
-        Invoke("StartBall", 2f);
+
+        // Check for the winning condition
+        if (int.Parse(PlayerScore.text) == WinningScore || int.Parse(AIScore.text) == WinningScore)
+        {
+            GameOver.enabled = true;
+        }
+        else
+        {
+            Invoke("StartBall", 2f);
+        }
     }
 
     private void PlayerBounce(Transform myObject)
@@ -72,9 +84,23 @@ public class Ball : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if(collision.gameObject.name == "Player" || collision.gameObject.name == "AI")
+        if (collision.gameObject.name == "Player" || collision.gameObject.name == "AI")
         {
             PlayerBounce(collision.transform);
+        }
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (transform.position.x > 0)
+        {
+            ResetBall();
+            PlayerScore.text = (int.Parse(PlayerScore.text) + 1).ToString();
+        }
+        else if (transform.position.x < 0)
+        {
+            ResetBall();
+            AIScore.text = (int.Parse(AIScore.text) + 1).ToString();
         }
     }
 }
