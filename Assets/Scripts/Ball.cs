@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,12 +13,18 @@ public class Ball : MonoBehaviour
 
     private int _hitCounter;
     private Rigidbody2D _rb;
+    private Camera _mainCamera;
+    private float _originalCameraSize;
+    private float _maxZoomSize = 5f; 
 
     void Start()
     {
+        // Initialization
         GameOver.enabled = false;
-        _rb = GetComponent<Rigidbody2D>();  // Get the Rigidbody component on startup
-        Invoke("StartBall", 2f);  // Delay the initial ball movement for 2 seconds
+        _rb = GetComponent<Rigidbody2D>();
+        _mainCamera = Camera.main;
+        _originalCameraSize = _mainCamera.orthographicSize;
+        Invoke("StartBall", 2f);
     }
 
     private void FixedUpdate()
@@ -79,11 +84,31 @@ public class Ball : MonoBehaviour
         {
             yDirection = 0.25f;
         }
+
+        // Set the new velocity based on the hit
         _rb.velocity = new Vector2(xDirection, yDirection) * (InitialSpeed + (SpeedIncrease * _hitCounter));
+
+        // Zoom in by changing the camera's orthographic size
+        StartCoroutine(ZoomCamera(_maxZoomSize, 0.5f));
+    }
+
+    private void UpdateCameraPosition()
+    {
+        // Smoothly adjust the camera position to follow the ball
+        Vector3 ballPosition = transform.position;
+        ballPosition.z = _mainCamera.transform.position.z; 
+        _mainCamera.transform.position = Vector3.Lerp(_mainCamera.transform.position, ballPosition, 0.1f);
+    }
+
+    private void LateUpdate()
+    {
+        // Update the camera position after the ball has moved
+        UpdateCameraPosition();
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
+        // Handle collisions with the player or AI
         if (collision.gameObject.name == "Player" || collision.gameObject.name == "AI")
         {
             PlayerBounce(collision.transform);
@@ -92,6 +117,7 @@ public class Ball : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
+        // Check for scoring and reset the ball
         if (transform.position.x > 0)
         {
             ResetBall();
@@ -102,5 +128,21 @@ public class Ball : MonoBehaviour
             ResetBall();
             AIScore.text = (int.Parse(AIScore.text) + 1).ToString();
         }
+    }
+
+    private IEnumerator ZoomCamera(float targetSize, float duration)
+    {
+        // Coroutine to smoothly zoom the camera
+        float startTime = Time.time;
+        float initialSize = _mainCamera.orthographicSize;
+
+        while (Time.time - startTime < duration)
+        {
+            float t = (Time.time - startTime) / duration;
+            _mainCamera.orthographicSize = Mathf.Lerp(initialSize, targetSize, t);
+            yield return null;
+        }
+
+        _mainCamera.orthographicSize = targetSize;
     }
 }

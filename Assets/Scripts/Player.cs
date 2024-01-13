@@ -57,4 +57,22 @@ public class Player : MonoBehaviour
         // Apply the calculated movement to the player using Rigidbody velocity
         _rb.velocity = playerMove * movementSpeed;
     }
+
+    public void Teleport(Vector3 teleportPosition)
+    {
+        transform.position = teleportPosition;
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("TeleportPowerUp"))
+        {
+            TeleportPowerUp teleportPowerUp = other.GetComponent<TeleportPowerUp>();
+            if (teleportPowerUp != null)
+            {
+                Teleport(teleportPowerUp.teleportTarget.position);
+                teleportPowerUp.DeactivatePowerUp(); 
+            }
+        }
+    }
 }
